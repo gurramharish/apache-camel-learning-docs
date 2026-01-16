@@ -1638,7 +1638,156 @@ from("file:input?delete=true")
     .end();
 ```
 
-## 📋 Integration Patterns and Recommended Dependencies
+## � Standalone Camel Example: Hello World Timer without Spring Boot
+
+### Scenario Description
+This example demonstrates a simple "Hello World" Apache Camel application running as a standalone Java application without Spring Boot. The application uses a timer to periodically log a greeting message. This is the simplest possible Camel route and shows how to bootstrap Camel using `camel-main`.
+
+### What the Code Does
+- Uses `camel-main` to bootstrap Camel from a main method.
+- The route uses a timer that fires every 2 seconds.
+- Each timer event logs "Hello from Camel!" to the console.
+- Runs indefinitely until stopped (Ctrl+C).
+
+### Dependencies
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>camel-standalone-hello</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <camel.version>4.15.0</camel.version>
+    </properties>
+
+    <dependencies>
+        <!-- Core Camel functionality -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-core</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        <!-- Main class for standalone execution -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-main</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        <!-- Timer component for periodic triggers -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-timer</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+        <!-- Logging support -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-log</artifactId>
+            <version>${camel.version}</version>
+        </dependency>
+    </dependencies>
+</project>
+```
+
+- `camel-core`: Provides the core Camel engine and routing capabilities.
+- `camel-main`: Enables running Camel applications from a main method without external containers.
+- `camel-timer`: Provides timer-based message sources for periodic tasks.
+- `camel-log`: Allows logging messages to the console or log files.
+
+### Full Working Standalone Example
+
+**src/main/java/com/example/HelloWorldMain.java**:
+```java
+package com.example;
+
+import org.apache.camel.main.Main;
+
+public class HelloWorldMain {
+    
+    public static void main(String[] args) throws Exception {
+        // Create Camel Main instance
+        Main main = new Main();
+        
+        // Add the route builder
+        main.configure().addRoutesBuilder(new HelloRoute());
+        
+        // Start Camel and run until stopped
+        main.run();
+    }
+}
+```
+
+**src/main/java/com/example/HelloRoute.java**:
+```java
+package com.example;
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class HelloRoute extends RouteBuilder {
+    
+    @Override
+    public void configure() throws Exception {
+        // Timer that fires every 2 seconds
+        from("timer:hello?period=2000")
+            .routeId("hello-world")
+            // Log the greeting message
+            .log("Hello from Camel!")
+            // Also log to a specific logger
+            .to("log:myapp");
+    }
+}
+```
+
+### How to Run
+1. Create the project structure:
+```
+mkdir -p camel-standalone-hello/src/main/java/com/example
+```
+
+2. Place the `pom.xml` in the root.
+
+3. Create the Java files as shown.
+
+4. Compile and run:
+```bash
+mvn compile
+mvn exec:java -Dexec.mainClass="com.example.HelloWorldMain"
+```
+
+You should see logs like:
+```
+Hello from Camel!
+Hello from Camel!
+...every 2 seconds
+```
+
+### More Examples
+1. **Custom timer period**:
+```java
+from("timer:custom?period=5000")
+    .log("Custom timer: ${date:now}")
+```
+
+2. **Timer with fixed rate**:
+```java
+from("timer:fixed?fixedRate=true&period=3000")
+    .log("Fixed rate timer")
+```
+
+3. **Add counter**:
+```java
+from("timer:count?period=1000")
+    .setBody(simple("${exchangeProperty.CamelTimerCounter}"))
+    .log("Count: ${body}")
+```
+
+## �📋 Integration Patterns and Recommended Dependencies
 
 Apache Camel implements Enterprise Integration Patterns (EIPs). Below are key patterns with recommended dependencies and usage examples:
 
