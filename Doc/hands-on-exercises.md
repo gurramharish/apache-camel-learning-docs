@@ -120,6 +120,14 @@ This section lists the main Apache Camel Maven dependencies, their purposes, and
     - `activation`: MIME type handling.
   - **How They Help**: javax.mail provides email protocol support; activation handles content types.
 
+- **camel-ftp** (org.apache.camel:camel-ftp)
+  - **Purpose**: Enables FTP/SFTP file transfers for remote file system operations.
+  - **Used in Code**: from("ftp://host/path"), to("sftp://host/path")
+  - **Transitive Dependencies**:
+    - `jsch`: SSH/SFTP client library.
+    - `commons-net`: FTP client library.
+  - **How They Help**: jsch handles SFTP connections; commons-net provides FTP protocol support.
+
 ### Testing Dependencies
 
 - **camel-test-spring-junit5** (org.apache.camel:camel-test-spring-junit5)
@@ -1629,3 +1637,88 @@ from("file:input?delete=true")
         .to("file:errors")
     .end();
 ```
+
+## 📋 Integration Patterns and Recommended Dependencies
+
+Apache Camel implements Enterprise Integration Patterns (EIPs). Below are key patterns with recommended dependencies and usage examples:
+
+### Message Channel Patterns
+- **Point-to-Point Channel**: Use `camel-direct` for synchronous in-memory routing.
+  - **Dependencies**: `camel-direct`
+  - **Example**: `from("direct:input").to("direct:output")`
+- **Publish-Subscribe Channel**: Use `camel-seda` for asynchronous in-memory queues.
+  - **Dependencies**: `camel-seda`
+  - **Example**: `from("seda:topic").to("seda:subscriber1", "seda:subscriber2")`
+
+### Message Routing Patterns
+- **Content-Based Router**: Route messages based on content using `choice()`.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.choice().when(simple("${body.type} == 'A'")).to("direct:a")`
+- **Message Filter**: Filter messages using `filter()`.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.filter(simple("${body.valid} == true"))`
+- **Recipient List**: Dynamic routing with `recipientList()`.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.recipientList(header("recipients"))`
+- **Splitter**: Split messages using `split()`.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.split().tokenize("\n")`
+- **Aggregator**: Aggregate messages using `aggregate()`.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.aggregate(header("id"), new MyAggregationStrategy())`
+
+### Message Transformation Patterns
+- **Message Translator**: Transform message content.
+  - **Dependencies**: `camel-core`, `camel-bean`
+  - **Example**: `.transform().simple("Hello ${body}")`
+- **Content Enricher**: Enrich messages with additional data.
+  - **Dependencies**: `camel-core`, `camel-bean`
+  - **Example**: `.enrich("direct:enrich-service", new MyEnricher())`
+
+### Messaging Endpoints Patterns
+- **File Transfer**: Use file system endpoints.
+  - **Dependencies**: `camel-file`
+  - **Example**: `from("file:input").to("file:output")`
+- **FTP/SFTP Transfer**: Remote file operations.
+  - **Dependencies**: `camel-ftp`
+  - **Example**: `from("ftp://host/input").to("file:local")`
+- **HTTP/REST Services**: Web service integration.
+  - **Dependencies**: `camel-http`, `camel-jetty`, `camel-rest`
+  - **Example**: `from("rest:get:/api/data").to("http://api.example.com")`
+- **Database Integration**: JDBC operations.
+  - **Dependencies**: `camel-jdbc`
+  - **Example**: `to("jdbc:dataSource?statement=INSERT INTO...")`
+- **Messaging Systems**: Kafka, JMS, etc.
+  - **Dependencies**: `camel-kafka`, `camel-jms`
+  - **Example**: `from("kafka:topic").to("jms:queue")`
+
+### System Management Patterns
+- **Wire Tap**: Monitor messages without affecting flow.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.wireTap("direct:monitor")`
+- **Detour**: Conditional routing for testing/debugging.
+  - **Dependencies**: `camel-core`
+  - **Example**: `.detour("direct:detour").when(simple("${header.debug} == true"))`
+
+### Error Handling Patterns
+- **Dead Letter Channel**: Handle failed messages.
+  - **Dependencies**: `camel-core`
+  - **Example**: `errorHandler(deadLetterChannel("file:dlq"))`
+- **Circuit Breaker**: Prevent cascade failures.
+  - **Dependencies**: `camel-hystrix`
+  - **Example**: `.hystrix().circuitBreaker()`
+
+### Data Format Patterns
+- **Marshal/Unmarshal**: Convert between data formats.
+  - **Dependencies**: `camel-jackson` (JSON), `camel-csv`, `camel-xml-jaxp`
+  - **Example**: `.marshal().json()`, `.unmarshal().csv()`
+
+### Recommended Dependencies by Use Case
+- **File Processing**: `camel-file`, `camel-ftp`, `camel-csv`
+- **Web Services**: `camel-jetty`, `camel-rest`, `camel-jackson`, `camel-http`
+- **Databases**: `camel-jdbc`, `camel-sql`
+- **Messaging**: `camel-kafka`, `camel-jms`, `camel-rabbitmq`
+- **Cloud Services**: `camel-aws-s3`, `camel-google-drive`
+- **Email**: `camel-mail`
+- **Scheduling**: `camel-timer`, `camel-quartz`
+- **Testing**: `camel-test-spring-junit5`
